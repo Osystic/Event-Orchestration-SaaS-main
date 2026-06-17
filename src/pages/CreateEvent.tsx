@@ -238,7 +238,18 @@ export default function CreateEvent() {
         setThemesLoaded(true);
         return;
       }
-      setEventThemes(dedupeSportThemesForPicker(data || []) as any);
+      const deduped = (dedupeSportThemesForPicker(data || []) as any[]).reduce((acc: any[], t: any) => {
+        const existing = acc.find((x: any) => x.name === t.name);
+        if (existing) {
+          if (t.id < existing.id) {
+            acc[acc.indexOf(existing)] = t;
+          }
+        } else {
+          acc.push(t);
+        }
+        return acc;
+      }, []);
+      setEventThemes(deduped);
       setThemesLoaded(true);
     };
     fetchThemes();
@@ -557,6 +568,23 @@ export default function CreateEvent() {
 
       let categories = data || [];
 
+      // Fallback: if no categories found, try other theme rows with the same name (duplicate themes)
+      if (categories.length === 0) {
+        const sameNameThemes = eventThemes.filter((x) => x.name === tname && x.id !== selectedThemeId);
+        for (const alt of sameNameThemes) {
+          const { data: altData } = await supabase
+            .from('event_types')
+            .select('id, name, theme_id, parent_id')
+            .eq('theme_id', alt.id)
+            .is('parent_id', null)
+            .order('name');
+          if (altData && altData.length > 0) {
+            categories = altData;
+            break;
+          }
+        }
+      }
+
       // Single-root-wrapper themes (e.g. Special Event): the only top-level row is a wrapper
       // around the real category rows. Unwrap it so Category dropdown shows real categories,
       // not the wrapper name, and Type dropdown gets leaf types.
@@ -580,6 +608,17 @@ export default function CreateEvent() {
           }
         }
       }
+
+      // Dedup categories with same name (keep older row with lower id)
+      categories = categories.reduce((acc: any[], t: any) => {
+        const existing = acc.find((x: any) => x.name === t.name);
+        if (existing) {
+          if (t.id < existing.id) acc[acc.indexOf(existing)] = t;
+        } else {
+          acc.push(t);
+        }
+        return acc;
+      }, []);
 
       setEventTypes(categories);
 
@@ -833,8 +872,8 @@ export default function CreateEvent() {
         type_id: typeId,
         venue: data.venue,
         location: data.location?.trim() || null,
-        start_date: dateRange.from.toISOString().split('T')[0],
-        end_date: dateRange.to ? dateRange.to.toISOString().split('T')[0] : null,
+        start_date: (() => { const d = dateRange.from; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+        end_date: dateRange.to ? (() => { const d = dateRange.to!; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() : null,
         budget: budgetNum,
         expected_attendees: attendeesNum,
         theme_id: themeNum,

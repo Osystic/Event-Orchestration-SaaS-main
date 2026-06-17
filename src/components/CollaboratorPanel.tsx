@@ -326,6 +326,8 @@ export function CollaboratorPanel({
           created_by: user.id,
           assigned_to: user.id,
           assigned_to_display_name: user.email?.split("@")[0] ?? null,
+          checklist: [],
+          archived: false,
         })
         .select("id")
         .single();
@@ -346,7 +348,6 @@ export function CollaboratorPanel({
         event_id: eventId,
         description: form.description.trim(),
         field_changed: "pm_collaborator_request",
-        priority_tag: taskPriority,
         rollout_timing: form.rolloutTiming,
         requested_by: user.id,
         status: "pending",
@@ -396,8 +397,8 @@ export function CollaboratorPanel({
         locationId: "",
       });
       onChangeRequestPosted?.();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Error submitting change request:", e?.message || e, e?.code || "", e?.details || "");
       toast({
         title: "Error",
         description: plannerSafeErrorToastDescription(e, commentsPlannerCopy.toastGeneric),
