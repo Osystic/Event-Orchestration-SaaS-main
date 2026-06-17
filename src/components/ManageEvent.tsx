@@ -167,7 +167,10 @@ function normalizeDateInput(value: string | undefined | null): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 const ManageEvent = () => {
@@ -1044,6 +1047,7 @@ const ManageEvent = () => {
           category: "Change Management",
           created_by: user.id,
           archived: false,
+          checklist: [],
           ...(assignedCollaborator ? { assigned_to: assignedCollaborator.user_id } : {}),
         } as any)
         .select("id")
@@ -1159,8 +1163,8 @@ const ManageEvent = () => {
         type: "change_request",
         assigneeId: undefined,
       });
-    } catch (error) {
-      console.error("Error submitting request:", error);
+    } catch (error: any) {
+      console.error("Error submitting request:", error?.message || error, error?.code || "", error?.details || "");
       toast({
         title: "Error",
         description: plannerSafeErrorToastDescription(error, commentsPlannerCopy.toastGeneric),
