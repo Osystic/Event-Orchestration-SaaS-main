@@ -241,7 +241,15 @@ export const EventThemesDirectory = ({ onSelectTheme, selectedTheme, onClearSele
             data.map((t) => ({ id: t.id, name: t.name ?? "", premium: t.premium })),
           ).map((t) => t.id),
         );
-        const uniqueData = data.filter((t) => keptIds.has(t.id));
+        const sportAndKept = data.filter((t) => keptIds.has(t.id));
+
+        const nameSeen = new Set<string>();
+        const uniqueData = sportAndKept.filter((t) => {
+          const key = (t.name ?? "").trim().toLowerCase();
+          if (nameSeen.has(key)) return false;
+          nameSeen.add(key);
+          return true;
+        });
 
         const transformedThemes: ThemeDetails[] = uniqueData
           .map((theme) => {

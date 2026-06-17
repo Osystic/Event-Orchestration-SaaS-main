@@ -171,7 +171,7 @@ export async function applyChangeRequestToEvent(
   const eventParsers: Record<string, (v: string) => string | number | string[] | null> = {
     budget: (v) => {
       const n = Number(v);
-      if (!Number.isFinite(n) || n < 0) return null;
+      if (!Number.isFinite(n) || n < 0) return undefined;
       return n;
     },
     expected_attendees: (v) => {
@@ -214,6 +214,9 @@ export async function applyChangeRequestToEvent(
   }
 
   const value = parse(rawStr);
+  if (value === undefined || value === null) {
+    return { ok: true, appliedTo: "none" };
+  }
   const { error } = await supabase
     .from("events")
     .update({
