@@ -159,6 +159,17 @@ function coerceTimeForDb(value: string | undefined | null): string | null {
   return s.length > 8 ? s.slice(0, 8) : s;
 }
 
+/** Normalize any date-like value to YYYY-MM-DD for <input type="date"> compatibility. */
+function normalizeDateInput(value: string | undefined | null): string {
+  if (value == null || value === "") return "";
+  const s = String(value).trim();
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 const ManageEvent = () => {
   const [events, setEvents] = useState<ManageEventData[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<ManageEventData | null>(null);
@@ -543,11 +554,11 @@ const ManageEvent = () => {
   ) => {
     if (!eventData.id) return;
 
-    // Date validation
-    if (eventData.start_date && eventData.end_date) {
-      const start = new Date(eventData.start_date);
-      const end = new Date(eventData.end_date);
-      if (end < start) {
+    const normStart = normalizeDateInput(eventData.start_date);
+    const normEnd = normalizeDateInput(eventData.end_date);
+
+    if (normStart && normEnd) {
+      if (normEnd < normStart) {
         toast({
           title: "Invalid Dates",
           description: "End date cannot be before start date.",
@@ -555,15 +566,7 @@ const ManageEvent = () => {
         });
         return;
       }
-      if (start > end) {
-        toast({
-          title: "Invalid Dates",
-          description: "Start date cannot be after end date.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else if (eventData.end_date && !eventData.start_date) {
+    } else if (normEnd && !normStart) {
       toast({
         title: "Invalid Dates",
         description: "Start date is required if end date is set.",
@@ -580,15 +583,15 @@ const ManageEvent = () => {
       const entId = entIdsUse[0] ?? null;
       const svcId = svcIdsUse[0] ?? null;
 
-      const { error } = await supabase
-        .from("events")
-        .update({
-          title: eventData.title,
-          description: eventData.description,
-          start_date: eventData.start_date,
-          end_date: eventData.end_date,
-          start_time: coerceTimeForDb(eventData.start_time),
-          end_time: coerceTimeForDb(eventData.end_time),
+        const { error } = await supabase
+          .from("events")
+          .update({
+            title: eventData.title,
+            description: eventData.description,
+            start_date: normStart || null,
+            end_date: normEnd || null,
+            start_time: coerceTimeForDb(eventData.start_time),
+            end_time: coerceTimeForDb(eventData.end_time),
           location: eventData.location,
           venue: eventData.venue,
           theme_id: eventData.theme_id,
@@ -648,16 +651,15 @@ const ManageEvent = () => {
         }
 
         if (changeEntries.length > 0 && eventData.id && user?.id) {
-          const first = changeEntries[0];
           const { error: crErr } = await supabase.from("cm_change_requests").insert({
             event_id: eventData.id,
             requested_by: user.id,
-            description: `Event update (${changeEntries.length} field(s))`,
+            description: `Event update (${changeEntries.length} field(s)): ${changeEntries.map(([f]) => f).join(", ")}`,
             status: "pending",
             rollout_timing: "optional",
             field_changed: changeEntries.map(([f]) => f).join(", "),
-            old_value: first?.[1]?.oldValue?.toString() ?? null,
-            new_value: first?.[1]?.newValue?.toString() ?? null,
+            old_value: changeEntries.map(([, c]) => c.oldValue?.toString() ?? "—").join(" | "),
+            new_value: changeEntries.map(([, c]) => c.newValue?.toString() ?? "—").join(" | "),
           });
           if (crErr) {
             console.warn("cm_change_requests insert:", crErr);
@@ -2053,7 +2055,7 @@ const ManageEvent = () => {
                           id="start-date"
                           className="w-full min-w-0"
                           type="date"
-                          value={selectedEvent.start_date || ''}
+                          value={normalizeDateInput(selectedEvent.start_date) || ''}
                           onChange={(e) => handleFieldChange('start_date', e.target.value)}
                           disabled={selectedEvent.venue_booking_completed === true}
                         />
@@ -2065,7 +2067,7 @@ const ManageEvent = () => {
                           id="end-date"
                           className="w-full min-w-0"
                           type="date"
-                          value={selectedEvent.end_date || ''}
+                          value={normalizeDateInput(selectedEvent.end_date) || ''}
                           onChange={(e) => handleFieldChange('end_date', e.target.value)}
                           disabled={selectedEvent.venue_booking_completed === true}
                         />
@@ -2196,13 +2198,19 @@ const ManageEvent = () => {
                           id="budget"
                           className="w-full min-w-0"
                           type="number"
+                          min="0"
                           value={budgetInput}
                           onChange={(e) => setBudgetInput(e.target.value)}
                           onBlur={() => {
                             if (budgetInput) {
-                              const formatted = parseFloat(budgetInput).toFixed(2);
+                              const parsed = parseFloat(budgetInput);
+                              if (Number.isNaN(parsed) || parsed < 0) {
+                                setBudgetInput(selectedEvent?.budget != null ? Number(selectedEvent.budget).toFixed(2) : '');
+                                return;
+                              }
+                              const formatted = parsed.toFixed(2);
                               setBudgetInput(formatted);
-                              handleFieldChange('budget', parseFloat(formatted));
+                              handleFieldChange('budget', parsed);
                             } else {
                               handleFieldChange('budget', undefined);
                             }

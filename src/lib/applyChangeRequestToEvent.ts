@@ -171,7 +171,8 @@ export async function applyChangeRequestToEvent(
   const eventParsers: Record<string, (v: string) => string | number | string[] | null> = {
     budget: (v) => {
       const n = Number(v);
-      return Number.isFinite(n) ? n : 0;
+      if (!Number.isFinite(n) || n < 0) return null;
+      return n;
     },
     expected_attendees: (v) => {
       const n = parseInt(v, 10);

@@ -394,6 +394,14 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
         .maybeSingle();
       if (fetchErr) throw fetchErr;
       const next = (row?.budget ?? 0) + amt;
+      if (next < 0) {
+        toast({
+          title: "Budget cannot be negative",
+          description: `This adjustment would make the budget $${next.toFixed(2)}. Reduce budget items instead.`,
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase
         .from("events")
         .update({ budget: next })

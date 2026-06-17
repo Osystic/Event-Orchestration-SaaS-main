@@ -324,6 +324,8 @@ export function CollaboratorPanel({
           status: "not_started",
           category: "Change Management",
           created_by: user.id,
+          assigned_to: user.id,
+          assigned_to_display_name: user.email?.split("@")[0] ?? null,
         })
         .select("id")
         .single();
