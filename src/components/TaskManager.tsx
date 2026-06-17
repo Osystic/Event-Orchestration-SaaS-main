@@ -1135,11 +1135,12 @@ export function TaskManager({
           .select("id, title")
           .eq("event_id", evId)
           .eq("assigned_coordinator_name", manualNameTrim)
+          .eq("status", "completed")
           .limit(1);
         if (nameClash && nameClash.length > 0) {
           toast({
-            title: "Assignee already has a task for this event",
-            description: `Use a different name or re-open "${nameClash[0].title}". Only one primary task per assignee name per event.`,
+            title: "Assignee already has a completed task",
+            description: `Use a different name or re-open "${nameClash[0].title}".`,
             variant: "destructive",
           });
           return;
@@ -1151,10 +1152,11 @@ export function TaskManager({
           .select("id, title")
           .eq("event_id", evId)
           .eq("assigned_to", newTask.assigned_user_id)
+          .eq("status", "completed")
           .limit(1);
         if (userClash && userClash.length > 0) {
           toast({
-            title: "This team member already has a task for this event",
+            title: "Team member already has a completed task",
             description: `Existing: "${userClash[0].title}".`,
             variant: "destructive",
           });
@@ -1365,12 +1367,13 @@ export function TaskManager({
           .select("id, title")
           .eq("event_id", originalTask.event_id)
           .eq("assigned_to", assigned_user_id)
+          .eq("status", "completed")
           .neq("id", taskId)
           .limit(1);
         if (userClash && userClash.length > 0) {
           toast({
-            title: "This team member already has a task for this event",
-            description: `Existing: "${userClash[0].title}". Only one primary task per assigned user per event.`,
+            title: "Team member already has a completed task",
+            description: `Existing: "${userClash[0].title}".`,
             variant: "destructive",
           });
           return false;
@@ -1391,12 +1394,13 @@ export function TaskManager({
           .select("id, title")
           .eq("event_id", originalTask.event_id)
           .eq("assigned_coordinator_name", coordIncoming)
+          .eq("status", "completed")
           .neq("id", taskId)
           .limit(1);
         if (nameClash && nameClash.length > 0) {
           toast({
-            title: "Assignee already has a task for this event",
-            description: `Use a different name or open "${nameClash[0].title}". Only one primary task per assignee name per event.`,
+            title: "Assignee already has a completed task",
+            description: `Use a different name or open "${nameClash[0].title}".`,
             variant: "destructive",
           });
           return false;

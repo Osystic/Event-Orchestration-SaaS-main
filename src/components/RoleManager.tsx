@@ -274,19 +274,33 @@ export function RoleManager({
       // Call edge function to get users with emails (admin access required)
       const { data: usersResponse, error: usersError } = await supabase.functions.invoke('get-users-for-roles');
       
+      let allUsers: { id: string; name: string; email: string; status: 'online'; joinedAt: string; avatar: string | undefined }[] = [];
+
       if (usersError) {
-        console.error('Error fetching users from edge function:', usersError);
-        throw usersError;
+        console.warn('Edge function unavailable, falling back to profiles query:', usersError);
+        // Fallback: query profiles directly
+        const { data: profilesFallback, error: profilesFallbackError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, created_at, avatar_url');
+        if (profilesFallbackError) throw profilesFallbackError;
+        allUsers = (profilesFallback || []).map((p: any) => ({
+          id: p.user_id,
+          name: p.display_name || 'Unknown User',
+          email: '',
+          status: 'online' as const,
+          joinedAt: p.created_at || new Date().toISOString(),
+          avatar: p.avatar_url,
+        }));
+      } else {
+        allUsers = usersResponse?.users?.map((user: any) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          status: 'online' as const,
+          joinedAt: user.created_at || new Date().toISOString(),
+          avatar: user.avatar
+        })) || [];
       }
-      
-      const allUsers = usersResponse?.users?.map((user: any) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        status: 'online' as const,
-        joinedAt: user.created_at || new Date().toISOString(),
-        avatar: user.avatar
-      })) || [];
       
       // Create users list with role information
       const usersWithRoles = allUsers.map((user: any) => {

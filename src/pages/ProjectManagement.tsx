@@ -26,7 +26,7 @@ export default function ProjectManagement() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState("collaborator");
 
   // Only apply ?eventId= once events are loaded. Radix Select throws if `value` has no matching SelectItem.
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function ProjectManagement() {
     } else if (tab === "change-management") {
       setActiveTab("change-request");
     } else if (!tab) {
-      setActiveTab("tasks");
+      setActiveTab("collaborator");
     }
   }, [searchParams]);
 
