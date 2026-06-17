@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { IEP_LOGO_COLORED } from "@/lib/brandAssets";
 
@@ -20,25 +20,8 @@ const scrollToHash = (id: string) => {
 };
 
 export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
-  const [now, setNow] = useState(() => new Date());
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const timeLabel = now.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const dateLabel = now.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 
   const showSignInCta = page !== "auth";
 
@@ -92,13 +75,6 @@ export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
             <span className="inline-flex items-center rounded-md bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap shrink-0">
               Free Starter Plan for Event Planners
             </span>
-            <div className="flex shrink-0 items-center gap-1.5 pl-3 ml-1 border-l border-amber-200/60 text-muted-foreground tabular-nums">
-              <Clock className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
-              <div className="flex flex-col items-end text-[11px] leading-tight whitespace-nowrap">
-                <span className="text-foreground font-medium">{timeLabel}</span>
-                <span>{dateLabel}</span>
-              </div>
-            </div>
             {showSignInCta && (
               <>
                 <Button
@@ -122,10 +98,6 @@ export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
           </div>
 
           <div className="flex lg:hidden items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1 text-muted-foreground tabular-nums text-xs whitespace-nowrap">
-              <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <span>{timeLabel}</span>
-            </div>
             {showSignInCta && (
               <Button variant="ghost" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => navigate("/auth")}>
                 Sign In
