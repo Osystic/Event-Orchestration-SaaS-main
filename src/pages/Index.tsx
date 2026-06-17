@@ -60,7 +60,6 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [featuresExpanded, setFeaturesExpanded] = useState(false);
 
   useEffect(() => {
     const raw = window.location.hash.replace(/^#/, "");
@@ -103,11 +102,11 @@ const Index = () => {
   };
 
   const capabilities = [
-    "Select your event theme and launch instantly",
-    "Automate planning with AI-powered workflows",
-    "Adapt to real-time changes without disruption",
-    "Track performance with built-in analytics",
-    "Connect with trusted vendors and partners",
+    "🎯 Select your event theme and launch instantly",
+    "❄️ Automate planning with AI-powered workflows",
+    "📋 Adapt to real-time changes without disruption",
+    "📊 Track performance with built-in analytics",
+    "🤝 Connect with trusted vendors and partners",
   ];
 
   const whyChoose = [
@@ -152,13 +151,7 @@ const Index = () => {
             </div>
           </ScrollReveal>
           <ScrollReveal delay={300}>
-            <div
-              className="overflow-hidden transition-all duration-500 ease-in-out"
-              style={{
-                maxHeight: featuresExpanded ? "2000px" : "0px",
-                opacity: featuresExpanded ? 1 : 0,
-              }}
-            >
+            <div>
               <div className="text-center mb-8">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Smart Tools That Work for You</h3>
               </div>
@@ -190,17 +183,6 @@ const Index = () => {
               </div>
             </div>
           </ScrollReveal>
-          <ScrollReveal delay={400}>
-            <div className="text-center mt-10">
-              <button
-                type="button"
-                onClick={() => setFeaturesExpanded((v) => !v)}
-                className="text-primary font-semibold underline underline-offset-4 hover:text-primary/80 transition-colors"
-              >
-                {featuresExpanded ? "Show less" : "Show more"}
-              </button>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 
@@ -210,7 +192,7 @@ const Index = () => {
           <ScrollReveal>
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-balance mb-4">
-                Plan Unforgettable Events—Without the Stress
+                🎉 Plan Unforgettable Events—Without the Stress
               </h2>
               <p className="text-lg text-muted-foreground text-pretty mb-8">
                 From idea to execution, IDA Event Partners gives you everything you need to plan, manage, and scale exceptional events—all in one place.
@@ -226,16 +208,15 @@ const Index = () => {
 
           <ScrollReveal delay={100}>
             <div className="text-center mb-8 mt-16">
-              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Turn Your Vision Into a Seamless Experience</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">✨ Turn Your Vision Into a Seamless Experience</h3>
               <p className="text-lg text-muted-foreground text-pretty">Stop juggling spreadsheets, messages, and last-minute chaos.</p>
               <p className="text-lg text-muted-foreground text-pretty mt-2">With IDA Event Partners, you can:</p>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={200}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mb-6">
+            <div className="max-w-3xl mx-auto mb-6 space-y-3">
               {capabilities.map((cap, i) => (
-                <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-muted/20 border border-amber-100/60">
-                  <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div key={i} className="flex items-start gap-3 px-4">
                   <span className="text-foreground font-medium">{cap}</span>
                 </div>
               ))}
@@ -249,36 +230,24 @@ const Index = () => {
 
           <ScrollReveal delay={100}>
             <div className="text-center mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Built for Hosts &amp; Professional Event Planners</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-4">🚀 Built for Hosts &amp; Professional Event Planners</h3>
               <p className="text-lg text-muted-foreground text-pretty">Whether you're planning your own event or managing multiple clients:</p>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={200}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
-              <Card className="text-center border border-amber-100/60 shadow-md bg-white/70 dark:bg-muted/20">
-                <CardHeader>
-                  <CardTitle className="text-lg">Hosts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Create stunning, organized events with zero overwhelm</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center border border-amber-100/60 shadow-md bg-white/70 dark:bg-muted/20">
-                <CardHeader>
-                  <CardTitle className="text-lg">Event Planners</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Scale operations, manage teams, and deliver flawlessly</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center border border-amber-100/60 shadow-md bg-white/70 dark:bg-muted/20">
-                <CardHeader>
-                  <CardTitle className="text-lg">Businesses</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Connect, collaborate, and grow your network</p>
-                </CardContent>
-              </Card>
+            <div className="max-w-3xl mx-auto mb-8 space-y-3 px-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-foreground font-medium">Hosts — Create stunning, organized events with zero overwhelm</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-foreground font-medium">Event Planners — Scale operations, manage teams, and deliver flawlessly</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-foreground font-medium">Businesses — Connect, collaborate, and grow your network</span>
+              </div>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={300}>
@@ -294,7 +263,7 @@ const Index = () => {
 
           <ScrollReveal delay={100}>
             <div className="text-center mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Why Choose IDA Event Partners?</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">💡 Why Choose IDA Event Partners?</h3>
               <p className="text-lg text-muted-foreground text-pretty">Most tools help you plan.</p>
               <p className="text-lg text-muted-foreground text-pretty">We help you execute—flawlessly.</p>
             </div>
@@ -323,7 +292,7 @@ const Index = () => {
           <ScrollReveal>
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-balance mb-4">
-                Simple, Transparent Pricing
+                💰 Simple, Transparent Pricing
               </h2>
               <p className="text-muted-foreground text-lg">Start free. Upgrade when you're ready.</p>
             </div>
@@ -351,8 +320,8 @@ const Index = () => {
                       <span>Core planning tools</span>
                     </li>
                   </ul>
-                  <Button size="lg" className="w-full" onClick={() => handleCheckout("starter")}>
-                    Get Started Free
+                  <Button size="lg" className="w-full text-lg justify-center" onClick={() => handleCheckout("starter")}>
+                    👉 Get Started Free
                   </Button>
                 </CardContent>
               </Card>
@@ -387,11 +356,11 @@ const Index = () => {
                   </ul>
                   <Button
                     size="lg"
-                    className="w-full"
+                    className="w-full text-lg justify-center"
                     disabled={checkoutLoading === "pro"}
                     onClick={() => handleCheckout("pro")}
                   >
-                    {checkoutLoading === "pro" ? "Loading..." : "Upgrade to Pro"}
+                    {checkoutLoading === "pro" ? "Loading..." : "👉 Upgrade to Pro"}
                   </Button>
                 </CardContent>
               </Card>
@@ -467,7 +436,7 @@ const Index = () => {
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <ScrollReveal>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-balance">
-              Don't Let Event Chaos Cost You Time &amp; Money
+              ⏳ Don't Let Event Chaos Cost You Time &amp; Money
             </h2>
           </ScrollReveal>
           <ScrollReveal delay={100}>
@@ -479,7 +448,7 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap pt-4">
               <Link to="/auth">
                 <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
-                  Start Your Free Starter Plan Today
+                  ✅ Start Planning Smarter Today
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>

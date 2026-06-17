@@ -423,25 +423,21 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
   };
 
   const calculateTotals = () => {
-    // Start with the event budget
     const totalBudget = eventBudget ?? 0;
-    
-    // Sum all paid items (estimated cost for paid items)
-    const totalPaid = budgetItems
-      .filter(item => item.payment_status === 'paid')
-      .reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
-    
-    // Estimated total is budget minus paid items
-    const totalEstimated = totalBudget - totalPaid;
-    
-    const totalActual = budgetItems.reduce((sum, item) => sum + (item.actual_cost || 0), 0);
-    const variance = totalActual - totalEstimated;
-    const variancePercentage = totalBudget > 0 ? (variance / totalBudget) * 100 : 0;
 
-    return { totalEstimated, totalActual, variance, variancePercentage };
+    const totalEstimated = budgetItems
+      .reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
+
+    const totalActual = budgetItems
+      .reduce((sum, item) => sum + (item.actual_cost || 0), 0);
+
+    const variance = totalActual - totalEstimated;
+    const variancePercentage = totalEstimated > 0 ? (variance / totalEstimated) * 100 : 0;
+
+    return { totalBudget, totalEstimated, totalActual, variance, variancePercentage };
   };
 
-  const { totalEstimated, totalActual, variance, variancePercentage } = calculateTotals();
+  const { totalBudget, totalEstimated, totalActual, variance, variancePercentage } = calculateTotals();
 
   if (loading) {
     return <div className="flex justify-center py-8">Loading budget...</div>;
@@ -629,13 +625,26 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Estimated Total</p>
+                <p className="text-sm font-medium text-muted-foreground">Event Budget</p>
                 <p className="text-2xl font-bold">
-                  {eventBudget !== null ? `$${totalEstimated.toFixed(2)}` : 'No budget set'}
+                  {totalBudget > 0 ? `$${totalBudget.toFixed(2)}` : 'No budget set'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {eventBudget !== null ? 'From event budget' : 'Set budget in Create Event'}
+                  {totalBudget > 0 ? 'Set in Manage Event' : 'Set budget in Manage Event'}
                 </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Estimated Total</p>
+                <p className="text-2xl font-bold">${totalEstimated.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Sum of budget items</p>
               </div>
               <DollarSign className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -648,6 +657,7 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Actual Total</p>
                 <p className="text-2xl font-bold">${totalActual.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Spent so far</p>
               </div>
               <DollarSign className="h-8 w-8 text-muted-foreground" />
             </div>

@@ -245,7 +245,7 @@ export const EventThemesDirectory = ({ onSelectTheme, selectedTheme, onClearSele
 
         const nameSeen = new Set<string>();
         const uniqueData = sportAndKept.filter((t) => {
-          const key = (t.name ?? "").trim().toLowerCase();
+          const key = (t.name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
           if (nameSeen.has(key)) return false;
           nameSeen.add(key);
           return true;
@@ -559,6 +559,12 @@ export const EventThemesDirectory = ({ onSelectTheme, selectedTheme, onClearSele
       config = dropdownConfig[configKey];
     }
 
+    // Fallback: match dining themes by category regardless of exact name
+    if (!config && /dining/i.test(theme.name)) {
+      const diningKey = `Dining-${tag}`;
+      config = dropdownConfig[diningKey];
+    }
+
     const tagBadgeLabel =
       isSportThemeName(theme.name) ? sportingTypeUiLabel(tag) || tag : tag;
 
@@ -623,7 +629,7 @@ export const EventThemesDirectory = ({ onSelectTheme, selectedTheme, onClearSele
 
     if (viewMode === "list") {
       return (
-        <Card className={`cursor-pointer transition-all duration-300 hover:shadow-md border-2 ${
+        <Card className={`cursor-pointer transition-all duration-300 hover:shadow-md border-2 overflow-visible ${
           isSelected ? 'border-primary shadow-lg' : 'border-border'
         }`}>
           <CardContent className="p-4">
@@ -686,7 +692,7 @@ export const EventThemesDirectory = ({ onSelectTheme, selectedTheme, onClearSele
 
     // Grid view
     return (
-      <Card className={`cursor-pointer transition-all duration-300 hover:shadow-md border-2 ${
+      <Card className={`cursor-pointer transition-all duration-300 hover:shadow-md border-2 overflow-visible ${
         isSelected ? 'border-primary shadow-lg' : 'border-border'
       }`}>
         <CardHeader className="pb-3">
