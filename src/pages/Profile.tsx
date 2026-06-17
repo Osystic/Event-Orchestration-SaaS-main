@@ -69,7 +69,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, display_name, bio, avatar_url, subscription_level')
+        .select('username, display_name, bio, avatar_url, subscription_level, subscription_plan, subscription_status')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -84,13 +84,28 @@ const Profile = () => {
       }
 
       if (data) {
+        // Auto-fill subscription from profile data; default to starter if empty
+        const subLevel = (data as any).subscription_level || (data as any).subscription_plan || "starter";
+
         setProfile({
           username: data.username || "",
           display_name: data.display_name || "",
           bio: data.bio || "",
           avatar_url: data.avatar_url || "",
-          subscription_level: (data as { subscription_level?: string | null }).subscription_level || "",
+          subscription_level: subLevel,
         });
+
+        // Backfill subscription fields if missing
+        if (!(data as any).subscription_plan || !(data as any).subscription_status) {
+          await supabase
+            .from('profiles')
+            .update({
+              subscription_plan: (data as any).subscription_plan || "starter",
+              subscription_status: (data as any).subscription_status || "active",
+              subscription_level: subLevel,
+            })
+            .eq('user_id', user.id);
+        }
       } else {
         // Create profile if it doesn't exist
         await createUserProfile();
@@ -105,12 +120,17 @@ const Profile = () => {
 
     try {
       const { username, display_name } = defaultProfileFromAuthUser(user);
+      const meta = user.user_metadata as { user_category?: string; user_type?: string } | undefined;
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           user_id: user.id,
           username,
           display_name,
+          subscription_level: "starter",
+          subscription_plan: "starter",
+          subscription_status: "active",
+          subscription_started_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -130,7 +150,7 @@ const Profile = () => {
         display_name: data?.display_name ?? display_name,
         bio: "",
         avatar_url: "",
-        subscription_level: "",
+        subscription_level: data?.subscription_level ?? "starter",
       });
     } catch (err: any) {
       console.error('Error in createUserProfile:', err);

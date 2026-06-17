@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, Download } from "lucide-react";
+import { downloadInvoicePdf } from "@/lib/invoicePdf";
 
 interface InvoiceRow {
   id: string;
@@ -48,7 +49,7 @@ export default function Invoices() {
     const { data: profile } = await supabase
       .from("profiles")
       .select("subscription_plan, subscription_status, subscription_expires_at")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (profile) {
@@ -85,6 +86,27 @@ export default function Invoices() {
     }
     toast({ title: "Invoice marked as paid" });
     void load();
+  };
+
+  const handleDownloadPdf = async (inv: InvoiceRow) => {
+    try {
+      await downloadInvoicePdf({
+        invoiceNumber: inv.invoice_number || `INV-${inv.id.slice(0, 8)}`,
+        planName: inv.plan_name,
+        amount: inv.amount,
+        currency: inv.currency,
+        status: inv.status,
+        paidAt: inv.paid_at,
+        billingPeriodStart: inv.billing_period_start,
+        billingPeriodEnd: inv.billing_period_end,
+        userName: user?.email?.split("@")[0] || "User",
+        userEmail: user?.email || "",
+      });
+      toast({ title: "Invoice downloaded" });
+    } catch (err) {
+      console.error("PDF download error:", err);
+      toast({ title: "Download failed", description: "Could not generate PDF.", variant: "destructive" });
+    }
   };
 
   return (
@@ -172,16 +194,29 @@ export default function Invoices() {
                           : "—"}
                       </td>
                       <td className="py-3">
-                        {inv.status === "sent" || inv.status === "overdue" ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void markPaid(inv.id)}
-                          >
-                            Mark Paid
-                          </Button>
-                        ) : null}
+                        <div className="flex gap-1">
+                          {inv.status === "paid" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => void handleDownloadPdf(inv)}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              PDF
+                            </Button>
+                          )}
+                          {inv.status === "sent" || inv.status === "overdue" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void markPaid(inv.id)}
+                            >
+                              Mark Paid
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}

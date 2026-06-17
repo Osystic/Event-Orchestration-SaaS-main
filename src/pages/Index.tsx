@@ -1,23 +1,64 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, BarChart3, Bell, FolderOpen } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MarketingTopBar } from "@/components/MarketingTopBar";
 import { MarketingWaitlistForm } from "@/components/marketing/MarketingWaitlistForm";
 import { IEP_LOGO_COLORED } from "@/lib/brandAssets";
+import { redirectToCheckout } from "@/lib/checkout";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const scrollToId = (id: string) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 };
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
   useEffect(() => {
     const raw = window.location.hash.replace(/^#/, "");
     if (raw && document.getElementById(raw)) {
       requestAnimationFrame(() => scrollToId(raw));
     }
   }, []);
+
+  const handleCheckout = async (planId: "starter" | "pro" | "business") => {
+    if (planId === "starter") {
+      navigate("/auth");
+      return;
+    }
+    if (planId === "business") return;
+
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setCheckoutLoading(planId);
+    try {
+      const success = await redirectToCheckout(planId);
+      if (!success) {
+        toast({
+          title: "Checkout unavailable",
+          description: "Unable to start checkout. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   const features = [
     {
@@ -87,7 +128,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
             <Link to="/auth">
               <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-3 shadow-md">
-                Start with Your Vision
+                Try Starter Plan - Free
               </Button>
             </Link>
             <Button
@@ -192,13 +233,13 @@ const Index = () => {
                 price: "Free",
                 features: ["Basic event creation", "Limited templates", "Core planning tools"],
                 cta: "Get started free",
-                href: "/auth",
+                planId: "starter" as const,
                 disabled: false,
                 highlight: false,
               },
               {
                 name: "Pro Plan",
-                price: "",
+                price: "$29/mo",
                 features: [
                   "Unlimited events",
                   "Advanced AI workflows",
@@ -206,21 +247,21 @@ const Index = () => {
                   "Analytics dashboard",
                 ],
                 cta: "Upgrade to Pro",
-                href: "/auth",
+                planId: "pro" as const,
                 disabled: false,
                 highlight: true,
               },
               {
                 name: "Business Plan",
-                price: "",
+                price: "TBA",
                 features: [
                   "Multi-user collaboration",
                   "Vendor and partner integrations",
                   "Priority support",
                   "Custom workflow automation",
                 ],
-                cta: "Coming Soon",
-                href: "",
+                cta: "TBA",
+                planId: "business" as const,
                 disabled: true,
                 highlight: false,
               },
@@ -255,11 +296,14 @@ const Index = () => {
                       {tier.cta}
                     </Button>
                   ) : (
-                    <Link to={tier.href} className="w-full">
-                      <Button size="lg" className="w-full">
-                        {tier.cta}
-                      </Button>
-                    </Link>
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      disabled={checkoutLoading === tier.planId}
+                      onClick={() => handleCheckout(tier.planId)}
+                    >
+                      {checkoutLoading === tier.planId ? "Loading..." : tier.cta}
+                    </Button>
                   )}
                 </CardContent>
               </Card>

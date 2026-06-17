@@ -13,6 +13,7 @@ import {
   CheckSquare,
   AlertCircle,
   Building2,
+  Download,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { downloadEventPlanPdf } from "@/lib/eventPlanPdf";
 
 type EventRow = {
   id: string;
@@ -140,6 +142,7 @@ export default function PreviewEventPlan() {
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequestRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
 
   // Load owner's events
   useEffect(() => {
@@ -297,6 +300,56 @@ export default function PreviewEventPlan() {
 
   const isOwner = !!event && !!user?.id && event.user_id === user.id;
 
+  const handleExportPdf = async () => {
+    if (!event) return;
+    setPdfExporting(true);
+    try {
+      await downloadEventPlanPdf({
+        title: event.title,
+        description: event.description || undefined,
+        startDate: event.start_date ? fmtDate(event.start_date) : undefined,
+        endDate: event.end_date ? fmtDate(event.end_date) : undefined,
+        venue: event.venue || undefined,
+        location: event.location || undefined,
+        budget: event.budget != null ? Number(event.budget) : undefined,
+        expectedAttendees: event.expected_attendees != null ? Number(event.expected_attendees) : undefined,
+        status: event.status || undefined,
+        themeName,
+        tasks: tasks.map((t) => ({
+          title: t.title,
+          status: t.status || undefined,
+          priority: t.priority || undefined,
+          assignedTo: t.assigned_to_display_name || undefined,
+          dueDate: t.due_date ? fmtDate(t.due_date) : undefined,
+        })),
+        budgetItems: budget.map((b) => ({
+          category: b.category || undefined,
+          description: b.description || undefined,
+          estimatedCost: b.estimated_cost != null ? Number(b.estimated_cost) : undefined,
+          actualCost: b.actual_cost != null ? Number(b.actual_cost) : undefined,
+          vendorName: b.vendor_name || undefined,
+        })),
+        suppliers: suppliers.map((s) => ({
+          businessName: s.business_name,
+          category: s.category_id != null ? String(s.category_id) : undefined,
+        })),
+        changeRequests: changeRequests.map((c) => ({
+          createdAt: c.created_at,
+          description: c.description || undefined,
+          fieldChanged: c.field_changed || undefined,
+          status: c.status || undefined,
+          priorityTag: c.priority_tag || undefined,
+        })),
+      });
+      toast({ title: "PDF downloaded", description: "Event plan exported successfully." });
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast({ title: "Export failed", description: "Could not generate PDF.", variant: "destructive" });
+    } finally {
+      setPdfExporting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <style>{`
@@ -343,7 +396,11 @@ export default function PreviewEventPlan() {
           </Button>
           <Button onClick={() => window.print()} disabled={!eventId}>
             <Printer className="mr-2 h-4 w-4" />
-            Print / Export PDF
+            Print
+          </Button>
+          <Button onClick={handleExportPdf} disabled={!eventId || pdfExporting}>
+            <Download className="mr-2 h-4 w-4" />
+            {pdfExporting ? "Exporting..." : "Export PDF"}
           </Button>
         </div>
       </div>

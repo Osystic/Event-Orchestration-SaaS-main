@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FileText, CheckSquare, Package, Copy, Edit, ArrowLeft } from "lucide-react";
+import { Plus, FileText, CheckSquare, Package, Copy, Edit, ArrowLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,10 +27,16 @@ const PlanningAssets = () => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
+  const [saveAsTemplateEventId, setSaveAsTemplateEventId] = useState<string | null>(null);
+  const [saveAsTemplateName, setSaveAsTemplateName] = useState("");
+  const [saveAsTemplateDesc, setSaveAsTemplateDesc] = useState("");
+  const [saveAsTemplateLoading, setSaveAsTemplateLoading] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       loadTemplates();
+      loadEvents();
     }
   }, [user?.id]);
 
@@ -188,6 +194,78 @@ const PlanningAssets = () => {
     }
   };
 
+  const handleSaveEventAsTemplate = async () => {
+    if (!saveAsTemplateEventId || !saveAsTemplateName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please select an event and enter a template name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSaveAsTemplateLoading(true);
+    try {
+      // Fetch all tasks from the event
+      const { data: eventTasks, error: fetchError } = await supabase
+        .from('tasks')
+        .select('title, description')
+        .eq('event_id', saveAsTemplateEventId)
+        .eq('user_id', user?.id);
+
+      if (fetchError) throw fetchError;
+
+      // Create the template
+      const { data: template, error: templateError } = await supabase
+        .from('templates')
+        .insert({
+          user_id: user?.id,
+          name: saveAsTemplateName,
+          description: saveAsTemplateDesc || `Created from event`
+        })
+        .select()
+        .single();
+
+      if (templateError) throw templateError;
+
+      // Copy tasks to template_tasks
+      if (eventTasks && eventTasks.length > 0) {
+        const templateTasks = eventTasks.map(task => ({
+          template_id: template.id,
+          user_id: user?.id,
+          title: task.title,
+          description: task.description
+        }));
+
+        const { error: insertError } = await supabase
+          .from('template_tasks')
+          .insert(templateTasks);
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: "Event Saved as Template",
+        description: `"${saveAsTemplateName}" has been created with ${eventTasks?.length || 0} task(s)`,
+      });
+
+      setSaveAsTemplateOpen(false);
+      setSaveAsTemplateEventId(null);
+      setSaveAsTemplateName("");
+      setSaveAsTemplateDesc("");
+      loadTemplates();
+    } catch (error) {
+      console.error('Error saving event as template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save event as template",
+        variant: "destructive"
+      });
+    } finally {
+      setSaveAsTemplateLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
@@ -232,6 +310,84 @@ const PlanningAssets = () => {
               <Button onClick={handleCreateTemplate} className="w-full">
                 Create Template
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={saveAsTemplateOpen} onOpenChange={setSaveAsTemplateOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Save className="h-4 w-4 mr-2" />
+              Save Event as Template
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save Event as Reusable Template</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select an event to save its tasks as a reusable template.
+              </p>
+              {eventsLoading ? (
+                <div className="text-center py-4 text-muted-foreground">Loading events...</div>
+              ) : events.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground mb-2">No events found. Create an event first.</p>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setSaveAsTemplateOpen(false);
+                    navigate("/dashboard/create-event");
+                  }}>
+                    Create Event
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <ScrollArea className="h-[200px] pr-4">
+                    <div className="space-y-2">
+                      {events.map((event) => (
+                        <Card
+                          key={event.id}
+                          className={`cursor-pointer transition-colors ${
+                            saveAsTemplateEventId === event.id
+                              ? 'border-primary bg-primary/5'
+                              : 'hover:border-primary/50'
+                          }`}
+                          onClick={() => setSaveAsTemplateEventId(event.id)}
+                        >
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-sm">{event.title}</CardTitle>
+                            <CardDescription className="text-xs">
+                              {event.start_date ? new Date(event.start_date).toLocaleDateString() : ""}
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  <Input
+                    placeholder="Template name"
+                    value={saveAsTemplateName}
+                    onChange={(e) => setSaveAsTemplateName(e.target.value)}
+                  />
+                  <Textarea
+                    placeholder="Description (optional)"
+                    value={saveAsTemplateDesc}
+                    onChange={(e) => setSaveAsTemplateDesc(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setSaveAsTemplateOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveEventAsTemplate}
+                      disabled={!saveAsTemplateEventId || !saveAsTemplateName.trim() || saveAsTemplateLoading}
+                    >
+                      {saveAsTemplateLoading ? "Saving..." : "Save as Template"}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>

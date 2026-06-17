@@ -85,7 +85,7 @@ export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
               variant="ghost"
               size="sm"
               className="text-foreground/90 shrink-0 whitespace-nowrap"
-              onClick={() => scrollToHash("payment-plan")}
+              onClick={() => scrollToHash("pricing")}
             >
               Pricing
             </Button>
@@ -176,7 +176,7 @@ export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
                 variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
-                  scrollToHash("payment-plan");
+                  scrollToHash("pricing");
                   setOpen(false);
                 }}
               >
