@@ -33,7 +33,9 @@ function ScrollReveal({
         if (entry.isIntersecting) {
           el.style.transitionDelay = `${delay}ms`;
           el.classList.add("revealed");
-          observer.unobserve(el);
+        } else {
+          el.classList.remove("revealed");
+          el.style.transitionDelay = "0ms";
         }
       },
       { threshold: 0.15 },
