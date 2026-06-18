@@ -431,13 +431,16 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
     const totalActual = budgetItems
       .reduce((sum, item) => sum + (item.actual_cost || 0), 0);
 
+    // Variance = budget - actual (positive = underbudget / money left)
+    const remaining = totalBudget > 0 ? totalBudget - totalActual : null;
+    // Variance = actual - estimated (positive = overestimated spend)
     const variance = totalActual - totalEstimated;
     const variancePercentage = totalEstimated > 0 ? (variance / totalEstimated) * 100 : 0;
 
-    return { totalBudget, totalEstimated, totalActual, variance, variancePercentage };
+    return { totalBudget, totalEstimated, totalActual, remaining, variance, variancePercentage };
   };
 
-  const { totalBudget, totalEstimated, totalActual, variance, variancePercentage } = calculateTotals();
+  const { totalBudget, totalEstimated, totalActual, remaining, variance, variancePercentage } = calculateTotals();
 
   if (loading) {
     return <div className="flex justify-center py-8">Loading budget...</div>;
@@ -627,13 +630,33 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Event Budget</p>
                 <p className="text-2xl font-bold">
-                  {totalBudget > 0 ? `$${totalBudget.toFixed(2)}` : 'No budget set'}
+                  {eventBudget != null ? `$${totalBudget.toFixed(2)}` : 'No budget set'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {totalBudget > 0 ? 'Set in Manage Event' : 'Set budget in Manage Event'}
+                  {eventBudget != null ? 'Set in Manage Event' : 'Set budget in Manage Event'}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Remaining</p>
+                <p className={`text-2xl font-bold ${remaining != null && remaining < 0 ? 'text-red-600' : remaining != null ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  {remaining != null ? `$${Math.abs(remaining).toFixed(2)}` : '—'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {remaining != null ? (remaining >= 0 ? 'Budget left' : 'Over budget') : 'Set budget first'}
+                </p>
+              </div>
+              {remaining != null && remaining < 0 ? 
+                <TrendingUp className="h-8 w-8 text-red-600" /> : 
+                <TrendingDown className="h-8 w-8 text-green-600" />
+              }
             </div>
           </CardContent>
         </Card>
@@ -668,9 +691,12 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Variance</p>
+                <p className="text-sm font-medium text-muted-foreground">Estimate Variance</p>
                 <p className={`text-2xl font-bold ${variance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                   ${Math.abs(variance).toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {variance >= 0 ? 'Actual exceeds estimate' : 'Under estimated cost'}
                 </p>
               </div>
               {variance >= 0 ? 
@@ -685,7 +711,7 @@ export function BudgetTracker({ eventId, selectedEventFilter }: BudgetTrackerPro
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Variance %</p>
+                <p className="text-sm font-medium text-muted-foreground">Estimate Variance %</p>
                 <p className={`text-2xl font-bold ${variancePercentage >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {variancePercentage >= 0 ? '+' : ''}{variancePercentage.toFixed(1)}%
                 </p>

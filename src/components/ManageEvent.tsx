@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,6 +140,8 @@ interface NewRequest {
   rolloutTiming: RolloutTiming;
   type: 'change_request' | 'new_requirement' | 'issue';
   assigneeId?: string;
+  locationId?: string;
+  estimatedMinutes?: number;
 }
 
 interface EventCollaborator {
@@ -165,11 +167,15 @@ function normalizeDateInput(value: string | undefined | null): string {
   const s = String(value).trim();
   if (!s) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Parse ISO dates directly to avoid timezone conversion via new Date()
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return "";
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // Use UTC methods to avoid timezone shift
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -183,12 +189,14 @@ const ManageEvent = () => {
   const [pendingChanges, setPendingChanges] = useState<{[key: string]: {oldValue: any, newValue: any}}>({});
   const [newRequestDialog, setNewRequestDialog] = useState(false);
   const [submittingNewRequest, setSubmittingNewRequest] = useState(false);
+  const skipAutoSaveUntilRef = useRef(0);
   const [newRequest, setNewRequest] = useState<NewRequest>({
     title: '',
     description: '',
     rolloutTiming: 'optional',
     type: 'change_request'
   });
+  const [cmLocations, setCmLocations] = useState<{ id: string; name: string }[]>([]);
   const [eventThemes, setEventThemes] = useState<EventTheme[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   /** Same Health & Wellness / Retreats hierarchy as Create Event + Browse Themes. */
@@ -814,23 +822,8 @@ const ManageEvent = () => {
 
     // Log field change for audit trail
     if (selectedEvent.id) {
-      if (autoSave) {
-        // For auto-save, log immediately
-        try {
-          await supabase.rpc('log_change', {
-            p_entity_type: 'event',
-            p_entity_id: selectedEvent.id,
-            p_action: 'updated',
-            p_field_name: field,
-            p_old_value: oldValue?.toString() || null,
-            p_new_value: value?.toString() || null,
-            p_description: `Field "${field}" updated from "${oldValue || 'empty'}" to "${value || 'empty'}"`
-          });
-        } catch (error) {
-          console.error('Error logging field change:', error);
-        }
-      } else {
-        // For manual save, track pending changes
+      if (!autoSave) {
+        // For manual save, track pending changes (trigger handles audit logging)
         setPendingChanges(prev => ({
           ...prev,
           [field]: {
@@ -842,7 +835,7 @@ const ManageEvent = () => {
     }
 
     // Auto-save logic
-    if (autoSave) {
+    if (autoSave && Date.now() > skipAutoSaveUntilRef.current) {
       if (saveTimeout) clearTimeout(saveTimeout);
       const timeout = setTimeout(() => {
         saveEvent(updatedEvent, false);
@@ -1060,9 +1053,9 @@ const ManageEvent = () => {
       const { error: crErr } = await supabase.from("cm_change_requests").insert({
         event_id: selectedEvent.id,
         description: newRequest.description.trim(),
-        field_changed: "manage_event_new_request",
-        // priority_tag: newRequest.rolloutTiming === "urgent" ? "urgent" : "optional",
+        field_changed: newRequest.locationId ? `location:${newRequest.locationId}` : "manage_event_new_request",
         rollout_timing: newRequest.rolloutTiming,
+        location_id: newRequest.locationId || null,
         requested_by: user.id,
         status: "pending",
         task_id: taskRow.id,
@@ -1265,10 +1258,21 @@ const ManageEvent = () => {
         table: 'events' 
       }, (payload) => {
         console.log('Event change detected:', payload);
-        fetchEvents();
-        // Trigger resource refresh when event is updated
-        if (payload.eventType === 'UPDATE' && selectedEvent?.id === payload.new?.id) {
-          setResourceRefreshKey(prev => prev + 1);
+        // Update local state directly instead of re-fetching all events
+        if (payload.eventType === 'UPDATE' && payload.new) {
+          const updated = payload.new as ManageEventData;
+          setEvents(prev => prev.map(e => e.id === updated.id ? { ...e, ...updated, theme_id: updated.theme_id ? Number(updated.theme_id) : undefined } : e));
+          if (selectedEvent?.id === updated.id) {
+            setSelectedEvent(prev => prev ? { ...prev, ...updated, theme_id: updated.theme_id ? Number(updated.theme_id) : undefined } : prev);
+            setResourceRefreshKey(prev => prev + 1);
+          }
+        } else if (payload.eventType === 'INSERT' && payload.new) {
+          const inserted = payload.new as ManageEventData;
+          setEvents(prev => [{ ...inserted, theme_id: inserted.theme_id ? Number(inserted.theme_id) : undefined }, ...prev]);
+        } else if (payload.eventType === 'DELETE' && payload.old) {
+          const deleted = payload.old as ManageEventData;
+          setEvents(prev => prev.filter(e => e.id !== deleted.id));
+          if (selectedEvent?.id === deleted.id) setSelectedEvent(null);
         }
       })
       .subscribe();
@@ -1452,6 +1456,7 @@ const ManageEvent = () => {
         ...ev,
         theme_id: ev.theme_id ? Number(ev.theme_id) : undefined,
       });
+      skipAutoSaveUntilRef.current = Date.now() + 1000;
     })();
     return () => {
       cancelled = true;
@@ -1509,6 +1514,15 @@ const ManageEvent = () => {
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Fetch CM locations for change request form
+  useEffect(() => {
+    if (!newRequestDialog) return;
+    (async () => {
+      const { data } = await supabase.from("cm_locations").select("id, name").order("name");
+      if (data) setCmLocations(data);
+    })();
+  }, [newRequestDialog]);
 
   // Sync budget input with selectedEvent.budget
   useEffect(() => {
@@ -1766,6 +1780,43 @@ const ManageEvent = () => {
                   </p>
                 </div>
 
+                <div>
+                  <Label htmlFor="request-location">Location</Label>
+                  <Select
+                    value={newRequest.locationId ?? "__none__"}
+                    onValueChange={(v) =>
+                      setNewRequest((prev) => ({ ...prev, locationId: v === "__none__" ? undefined : v }))
+                    }
+                  >
+                    <SelectTrigger id="request-location">
+                      <SelectValue placeholder="No specific location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">No specific location</SelectItem>
+                      {cmLocations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.id}>
+                          {loc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="request-estimate">Estimated minutes</Label>
+                  <Input
+                    id="request-estimate"
+                    type="number"
+                    min={0}
+                    value={newRequest.estimatedMinutes ?? ''}
+                    onChange={(e) => setNewRequest(prev => ({
+                      ...prev,
+                      estimatedMinutes: e.target.value ? Number(e.target.value) : undefined
+                    }))}
+                    placeholder="e.g. 30"
+                  />
+                </div>
+
 
                 <div className="flex gap-3">
                   <Button
@@ -1874,6 +1925,7 @@ const ManageEvent = () => {
                     onClick={() => {
                       setSelectedEvent(event);
                       setSelectedCategoryId(null);
+                      skipAutoSaveUntilRef.current = Date.now() + 1000;
                     }}
                   >
                     <div className="font-medium text-sm truncate">{event.title || "Unnamed Event"}</div>
@@ -1887,7 +1939,7 @@ const ManageEvent = () => {
                     </div>
                     {event.start_date && (
                       <div className="text-xs text-muted-foreground">
-                        {format(new Date(event.start_date + "T00:00:00"), "MMM dd, yyyy")}
+                        {format(new Date(event.start_date.replace(/T.*/, '') + "T00:00:00Z"), "MMM dd, yyyy")}
                       </div>
                     )}
                   </div>

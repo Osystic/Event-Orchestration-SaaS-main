@@ -10,7 +10,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 const scrollToId = (id: string) => {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 };
 
 function ScrollReveal({
@@ -454,9 +459,8 @@ const Index = () => {
               </Link>
               <Button
                 type="button"
-                variant="outline"
                 size="lg"
-                className="text-lg px-8 py-3 border-amber-200/80 bg-white/60 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
+                className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={() => scrollToId("pricing")}
               >
                 Schedule a Demo
