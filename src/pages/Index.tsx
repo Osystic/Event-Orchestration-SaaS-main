@@ -125,8 +125,8 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-amber-50/95 via-orange-50/50 to-rose-50/40 dark:from-background dark:via-background dark:to-background">
       <MarketingTopBar page="home" />
 
-      {/* Section 1: Plan Memorable Events */}
-      <section id="capabilities" className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 border-y border-amber-200/40 bg-gradient-to-br from-rose-50/80 via-amber-50/60 to-orange-50/70 dark:from-muted/40 dark:via-muted/30 dark:to-muted/40">
+      {/* Section 1: Hero */}
+      <section id="hero" className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 border-y border-amber-200/40 bg-gradient-to-br from-rose-50/80 via-amber-50/60 to-orange-50/70 dark:from-muted/40 dark:via-muted/30 dark:to-muted/40">
         <div className="max-w-4xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-12">
@@ -139,10 +139,10 @@ const Index = () => {
             </div>
           </ScrollReveal>
           <ScrollReveal delay={100}>
-            <div className="text-center mb-12">
+            <div className="text-center mb-16">
               <Link to="/auth">
                 <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
-                  Start with Your Vision
+                  Start Planning Your Event
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -150,41 +150,72 @@ const Index = () => {
           </ScrollReveal>
           <ScrollReveal delay={200}>
             <div className="text-center mb-12">
-              <p className="text-lg text-muted-foreground text-pretty">
+              <p className="text-lg text-muted-foreground text-pretty mb-6">
                 Choose your event theme and let our intelligent platform guide you every step of the way—from concept to execution.
               </p>
+              <Link to="/auth">
+                <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                  Choose Your Theme
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={300}>
             <div>
-              <div className="text-center mb-8">
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Smart Tools That Work for You</h3>
+              <div id="features" className="text-center mb-8">
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Features</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mb-12">
                 {capabilities.map((cap, i) => (
-                  <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-muted/20 border border-amber-100/60">
-                    <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div key={i} className="flex items-center justify-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-muted/20 border border-amber-100/60 text-center">
                     <span className="text-foreground font-medium">{cap}</span>
                   </div>
                 ))}
               </div>
               <div className="text-center mb-12">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Collaborate &amp; Grow</h3>
-                <p className="text-lg text-muted-foreground text-pretty">
+                <p className="text-lg text-muted-foreground text-pretty mb-6">
                   Connect with trusted businesses and service providers to enhance your event and expand your network.
                 </p>
+                <Link to="/auth">
+                  <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                    Browse Vendors
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
               <div className="text-center mb-12">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Designed for Everyone</h3>
-                <p className="text-lg text-muted-foreground text-pretty">
+                <p className="text-lg text-muted-foreground text-pretty mb-6">
                   Whether you're hosting your own event or working as a professional planner, IDA Event Partners gives you the tools to succeed.
                 </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+                  <Link to="/auth">
+                    <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                      I'm a Host
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link to="/auth">
+                    <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                      I'm an Event Planner
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
               <div className="text-center">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Create Smarter. Plan Better. Execute Flawlessly.</h3>
-                <p className="text-lg text-muted-foreground text-pretty">
+                <p className="text-lg text-muted-foreground text-pretty mb-6">
                   Get started today and turn your ideas into unforgettable experiences.
                 </p>
+                <Link to="/auth">
+                  <Button size="lg" className="text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                    Get Started Free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </ScrollReveal>
@@ -221,7 +252,7 @@ const Index = () => {
           <ScrollReveal delay={200}>
             <div className="max-w-3xl mx-auto mb-6 space-y-3">
               {capabilities.map((cap, i) => (
-                <div key={i} className="flex items-start gap-3 px-4">
+                <div key={i} className="flex items-center justify-center gap-3 px-4 text-center">
                   <span className="text-foreground font-medium">{cap}</span>
                 </div>
               ))}
@@ -241,17 +272,14 @@ const Index = () => {
           </ScrollReveal>
           <ScrollReveal delay={200}>
             <div className="max-w-3xl mx-auto mb-8 space-y-3 px-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground font-medium">Hosts — Create stunning, organized events with zero overwhelm</span>
+              <div className="flex items-center justify-center gap-3 text-center">
+                <span className="text-foreground font-medium">✅ Hosts — Create stunning, organized events with zero overwhelm</span>
               </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground font-medium">Event Planners — Scale operations, manage teams, and deliver flawlessly</span>
+              <div className="flex items-center justify-center gap-3 text-center">
+                <span className="text-foreground font-medium">✅ Event Planners — Scale operations, manage teams, and deliver flawlessly</span>
               </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground font-medium">Businesses — Connect, collaborate, and grow your network</span>
+              <div className="flex items-center justify-center gap-3 text-center">
+                <span className="text-foreground font-medium">✅ Businesses — Connect, collaborate, and grow your network</span>
               </div>
             </div>
           </ScrollReveal>
