@@ -13,7 +13,12 @@ type MarketingTopBarProps = {
 
 const scrollToHash = (id: string) => {
   if (window.location.pathname === "/") {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   } else {
     window.location.assign(`/#${id}`);
   }
@@ -138,7 +143,7 @@ export function MarketingTopBar({ page = "home" }: MarketingTopBarProps) {
                 variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
-                  scrollToHash("demo");
+                  scrollToHash("pricing");
                   setOpen(false);
                 }}
               >

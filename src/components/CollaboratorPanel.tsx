@@ -29,6 +29,7 @@ import {
 } from "@/lib/collaboratorChecklists";
 import { Bell, Plus } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
+import { EventChangeRequestsList } from "@/components/change-management/EventChangeRequestsList";
 import {
   commentsPlannerCopy,
   plannerSafeErrorToastDescription,
@@ -85,10 +86,13 @@ export function CollaboratorPanel({
     rolloutTiming: "optional" as RolloutTiming,
     type: "change_request" as RequestType,
     locationId: "" as string,
+    estimatedMinutes: "" as string,
+    assigneeId: "" as string,
   });
   const [assignedTasks, setAssignedTasks] = useState<AssignedTaskRow[]>([]);
   const [assignedLoading, setAssignedLoading] = useState(false);
   const [eventLocations, setEventLocations] = useState<{ id: string; name: string | null; address: string | null }[]>([]);
+  const [crRefreshKey, setCrRefreshKey] = useState(0);
 
   const eventId = selectedEventFilter !== "all" ? selectedEventFilter : null;
 
@@ -353,7 +357,6 @@ export function CollaboratorPanel({
         status: "pending",
         task_id: taskId,
         ...(form.locationId ? { location_id: form.locationId } : {}),
-        device_info: deviceInfo,
       } as any);
       if (crErr) {
         await supabase.from("tasks").delete().eq("id", taskId);
@@ -395,7 +398,10 @@ export function CollaboratorPanel({
         rolloutTiming: "optional",
         type: "change_request",
         locationId: "",
+        estimatedMinutes: "",
+        assigneeId: "",
       });
+      setCrRefreshKey((k) => k + 1);
       onChangeRequestPosted?.();
     } catch (e: any) {
       console.error("Error submitting change request:", e?.message || e, e?.code || "", e?.details || "");
@@ -684,6 +690,20 @@ export function CollaboratorPanel({
         )}
       </Card>
 
+      {eventId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Requests</CardTitle>
+            <CardDescription>
+              View and track change requests you've submitted. Coordinators approve or decline from their view.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EventChangeRequestsList eventId={eventId} refreshToken={crRefreshKey} compact />
+          </CardContent>
+        </Card>
+      )}
+
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="w-full max-w-md mx-auto">
           <DialogHeader>
@@ -760,6 +780,17 @@ export function CollaboratorPanel({
                 </Select>
               </div>
             )}
+            <div>
+              <Label htmlFor="cr-estimate">Estimated minutes</Label>
+              <Input
+                id="cr-estimate"
+                type="number"
+                min={0}
+                value={form.estimatedMinutes}
+                onChange={(e) => setForm((f) => ({ ...f, estimatedMinutes: e.target.value }))}
+                placeholder="e.g. 30"
+              />
+            </div>
             <div>
               <Label htmlFor="cr-desc">Description</Label>
               <Textarea

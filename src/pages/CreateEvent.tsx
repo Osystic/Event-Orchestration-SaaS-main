@@ -874,6 +874,7 @@ export default function CreateEvent() {
         location: data.location?.trim() || null,
         start_date: (() => { const d = dateRange.from; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
         end_date: dateRange.to ? (() => { const d = dateRange.to!; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() : null,
+        status: 'pending' as const,
         budget: budgetNum,
         expected_attendees: attendeesNum,
         theme_id: themeNum,

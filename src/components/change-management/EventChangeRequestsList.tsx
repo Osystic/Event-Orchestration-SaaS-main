@@ -434,7 +434,7 @@ export function EventChangeRequestsList({ eventId, refreshToken = 0, compact }: 
                           ? "Task fields were updated where supported."
                           : applied.appliedTo === "event"
                             ? "Event details were updated where supported."
-                            : "Request approved. Unsupported fields are not auto-applied.";
+                            : "Request approved.";
                       toast({ title: "Approved", description: desc });
                       if (r.requested_by) {
                         await supabase.from("notifications").insert({
